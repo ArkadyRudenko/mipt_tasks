@@ -17,7 +17,11 @@ if(Sanitizers EQUAL 1)
 endif()
 
 
-include_directories(include/tests)
+include_directories(includes/tests)
+include_directories(includes/tests/deque_test)
+include_directories(includes/tests/string_test)
+include_directories(includes/string)
+include_directories(includes/deque)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
