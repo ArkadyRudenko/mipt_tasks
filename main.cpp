@@ -4,7 +4,6 @@
 
 #include "StringTests.h"
 #include "DequeTest.h"
-#include "test_deque.h"
 
 using namespace std;
 

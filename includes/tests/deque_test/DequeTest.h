@@ -158,6 +158,18 @@ void link_test() {
     ASSERT_EQUAL(76, link);
 }
 
+void iterator_test() {
+    Deque<int> d(10);
+    for(size_t i = 0; i < 10; i++) {
+        d.push_back(i);
+    }
+    auto it = d.begin();
+    for(auto begin = d.begin(); begin != d.end(); begin++) {
+        cout << *begin << endl;
+    }
+    Deque<int>::iterator b = d.begin();
+}
+
 
 void all_deque_tests() {
     TestRunner tr;
@@ -171,4 +183,5 @@ void all_deque_tests() {
     RUN_TEST(tr, copy_constr_test);
     RUN_TEST(tr, copy_constr_with_item_test);
     RUN_TEST(tr, link_test);
+    RUN_TEST(tr, iterator_test);
 }

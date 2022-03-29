@@ -3,7 +3,7 @@ project(mipt_tasks)
 
 #SET(MYCOMPILE_FLAGS "-Wall -Wextra")
 
-set(Sanitizers 0)
+set(Sanitizers 1)
 
 if(Sanitizers EQUAL 1)
     message("Compile with Sanitizers")

@@ -7,33 +7,24 @@ template<typename T>
 class Deque {
 public:
     Deque();
-
     explicit Deque(int capacity);
-
     Deque(const Deque &deq);
-
     Deque(int size, T item);
 
     size_t size() const;
-
     T &at(size_t index);
 
     void push_back(T item);
-
     void push_front(T item);
-
     void pop_back();
-
     void pop_front();
 
     Deque &operator=(const Deque &deq);
-
     T &operator[](size_t index);
-
     const T &operator[](size_t index) const;
 
 private:
-    static const size_t chunk_size = 1000; // 2 across the line
+    static const size_t chunk_size = 100; // 2 across the line
     size_t sz = 0;
     int capacity = 0;
     std::vector<std::vector<T>> chunks;
@@ -42,84 +33,130 @@ private:
     size_t end_chunk = 0;
     int begin_index = 0;
     int end_index = 1;
-
+public:
     class iterator {
-    private:
+    public:
         size_t chunk = 0;
         size_t index = 0;
-        std::vector<std::vector<T>> &link_on_chunks;
+        std::vector<std::vector<T>> &chunks;
     public:
 
-        iterator(std::vector<std::vector<T>> &link)
-                : link_on_chunks(link) {
+        iterator(std::vector<std::vector<T>> &chunks)
+                : chunks(chunks) {
 
         }
 
+        iterator(const iterator& it)
+                : chunks(it.chunks),
+                index(it.index),
+                chunk(it.chunk) {}
+
         T &operator*() {
-            return link_on_chunks[chunk][index];
+            return chunks[chunk][index];
         }
 
         iterator &operator++() {
-//            if (index == chunk_size - 1) {
-//                index = 0;
-//                if (begin_chunk != chunks.size() - 1) {
-//                    begin_chunk++;
-//                    if (begin_chunk > end_chunk) {
-//                        end_chunk = begin_chunk;
-//                    }
-//                } else {
-//                    begin_index = chunk_size - 2; // ???
-//                    end_index = chunk_size - 1; // ???
-//                }
-//            } else {
-//                if (!(end_chunk == begin_chunk and begin_index == chunk_size - 2
-//                      and (end_index == chunk_size - 1))) {
-//                    begin_index++;
-//                }
-//            }
-//            if (sz) {
-//                sz--;
-//            }
+            if (index == chunk_size - 1) {
+                index = 0;
+                chunk++;
+            } else {
+                index++;
+            }
+            return *this;
         }
 
         iterator &operator--() {
-
+            if (index == 0) {
+                index = chunk_size - 1;
+                chunk--;
+            } else {
+                index--;
+            }
+            return *this;
         }
 
-        iterator &operator++(int);
+        iterator &operator++(int) {
+            ++*this;
+            return *this;
+        }
 
-        iterator &operator--(int);
+        iterator &operator--(int) {
+            --*this;
+            return *this;
+        }
 
-        T *operator->();
+        T *operator->() {
+            return &chunks[chunk][index];
+        }
 
-        bool operator<(const iterator &it);
+        bool operator<(const iterator &it) {
+            if (chunk != it.chunk) {
+                return chunk < it.chunk;
+            } else {
+                return index < it.index;
+            }
+        }
 
-        bool operator<=(const iterator &it);
+        bool operator<=(const iterator &it) {
+            if (chunk != it.chunk) {
+                return chunk <= it.chunk;
+            } else {
+                return index <= it.index;
+            }
+        }
 
-        bool operator>(const iterator &it);
+        bool operator>(const iterator &it) {
+            if (chunk != it.chunk) {
+                return chunk > it.chunk;
+            } else {
+                return index > it.index;
+            }
+        }
 
-        bool operator>=(const iterator &it);
+        bool operator>=(const iterator &it) {
+            if (chunk != it.chunk) {
+                return chunk >= it.chunk;
+            } else {
+                return index >= it.index;
+            }
+        }
 
-        bool operator!=(const iterator &it);
+        bool operator!=(const iterator &it) {
+            if (chunk != it.chunk) {
+                return true;
+            } else {
+                return index != it.index;
+            }
+        }
 
-        bool operator==(const iterator &it);
+        bool operator==(const iterator &it) {
+            return chunk == it.chunk and index == it.index;
+        }
 
-        iterator &operator+(int n);
+        iterator &operator+(int n) {
+            index += n % chunk_size;
+            chunk += n / chunk_size;
+            return *this;
+        }
 
-        iterator &operator-(const iterator &it);
+        iterator &operator-(const iterator &it) {
+            iterator res(this->chunks);
+            res.chunk = chunk - it.chunk;
+            res.index = index = it.index;
+            return res;
+        }
     };
 
-//    iterator begin_;
-//    iterator end_;
-
+private:
+    iterator begin_;
+    iterator end_;
+public:
     iterator begin() {
-        return begin;
+        return begin_;
     }
-
     iterator end() {
-        return end;
+        return end_;
     }
-
 };
 
 template<typename T>
@@ -131,13 +168,19 @@ template<typename T>
 Deque<T>::Deque(int capacity) :
         capacity(capacity),
         begin_chunk(((capacity / chunk_size) + 1) / 2),
-        end_chunk(begin_chunk){
+        end_chunk(begin_chunk),
+        begin_(chunks),
+        end_(chunks) {
     chunks.reserve((capacity / chunk_size) + 1);
     for (size_t i = 0; i <= (capacity / chunk_size); i++) {
         chunks.push_back(std::vector<T>(chunk_size));
     }
     begin_index = chunk_size / 2;
     end_index = begin_index + 1;
+    begin_.chunk = begin_chunk;
+    begin_.index = begin_index;
+    end_.chunk = end_chunk;
+    end_.index = begin_index;
 }
 
 template<typename T>
@@ -153,6 +196,7 @@ void Deque<T>::push_back(T item) {
         }
         end_chunk++;
     }
+    end_++;
     sz++;
 }
 
@@ -175,6 +219,7 @@ void Deque<T>::pop_back() {
     if (sz) {
         sz--;
     }
+    end_--;
 }
 
 template<typename T>
@@ -190,6 +235,7 @@ void Deque<T>::push_front(T item) {
         }
     }
     sz++;
+    begin_--;
 }
 
 template<typename T>
@@ -214,6 +260,7 @@ void Deque<T>::pop_front() {
     if (sz) {
         sz--;
     }
+    begin_++;
 }
 
 template<typename T>
@@ -222,7 +269,9 @@ T &Deque<T>::operator[](size_t index) {
 }
 
 template<typename T>
-Deque<T>::Deque() {
+Deque<T>::Deque() :
+        begin_(chunks),
+        end_(chunks) {
     chunks.reserve(1);
     chunks.push_back(std::vector<T>(chunk_size));
     begin_index = chunk_size / 2;
@@ -243,7 +292,9 @@ template<typename T>
 Deque<T>::Deque(const Deque &deq)
         :
         Deque(deq.capacity) {
+
     *this = deq;
+
 }
 
 template<typename T>
