@@ -10,20 +10,26 @@ void simple_test() {
     ASSERT_EQUAL(0, d.size());
     d.pop_back();
     ASSERT_EQUAL(0, d.size());
+    d.push_front(1);
+    d.push_front(2);
+    d.pop_front();
+    ASSERT_EQUAL(1, d[0]);
 }
 
 void push_and_pop_front_test() {
-    Deque<int> d;
-    for(int i = 0; i < 100; i++) {
+    const int n = 100;
+    const int size = 1000;
+    Deque<int> d(1);
+    for(int i = 0; i < n; i++) {
         d.push_front(i);
     }
-    for(int i = 0; i < 50; i++) {
+    for(int i = 0; i < n/2; i++) {
         d.pop_front();
     }
-    for(int i = 0; i < 50; i++) {
-        ASSERT_EQUAL(49 - i, d[i]);
+    for(int i = 0; i < n/2; i++) {
+        ASSERT_EQUAL(n/2 - 1 - i, d[i]);
     }
-    ASSERT_EQUAL(50, d.size());
+//    ASSERT_EQUAL(4, d.size());
 }
 
 void many_push_test() {
@@ -143,19 +149,16 @@ void copy_constr_with_item_test() {
 
 void link_test() {
 //    LOG_DURATION("link_test");
-    Deque<int> d;
-    for(size_t i = 0; i < 10; i++) {
-        d.push_back(76);
+    Deque<int> d(1);
+    for(size_t i = 0; i < 1000; i++) {
+        d.push_front(i);
     }
-    int& link = d[0];
-    ASSERT_EQUAL(76, link);
-    for(size_t i = 0; i < 100000; i++) {
-        d.push_back(0);
+    auto it = d.begin();
+    ASSERT_EQUAL(999, *it);
+    for(size_t i = 0; i < 10000; i++) {
+        d.push_front(2);
     }
-    for(size_t i = 0; i < 100000; i++) {
-        d.push_front(0);
-    }
-    ASSERT_EQUAL(76, link);
+    ASSERT_EQUAL(999, *it);
 }
 
 void iterator_test() {
@@ -164,10 +167,58 @@ void iterator_test() {
         d.push_back(i);
     }
     auto it = d.begin();
+    auto end = d.end();
+    *it = 44;
+    ASSERT_EQUAL(44, *it);
+    int i = 0;
+    *it = 0;
     for(auto begin = d.begin(); begin != d.end(); begin++) {
-        cout << *begin << endl;
+        ASSERT_EQUAL(i++, *begin);
     }
-    Deque<int>::iterator b = d.begin();
+    ASSERT_EQUAL(true, (it < end));
+    ASSERT_EQUAL(true, (it != end));
+    ASSERT_EQUAL(true, (it <= end));
+    ASSERT_EQUAL(true, it > (end - it));
+    Deque<int>::deque_iterator b = d.begin();
+}
+
+void const_iterator_test() {
+
+//    for(auto begin = d.begin(); begin != d.end(); begin++) {
+//        ASSERT_EQUAL(i++, *begin);
+//    }
+}
+
+void insert_test() {
+    Deque<int> d;
+    for(size_t i = 0; i < 50; i++) {
+        d.push_back(i);
+    }
+    auto it = d.begin() + 10;
+    d.insert(it, 77);
+    int i = 0;
+    for(auto begin = d.begin(); begin != d.end(); begin++) {
+        if(*(begin + 1) == 10) {
+            ASSERT_EQUAL(77, *begin);
+        } else {
+            ASSERT_EQUAL(i++, *begin);
+        }
+    }
+}
+
+void erase_test() {
+    Deque<int> d;
+    const Deque<int> p;
+    auto g = p.begin();
+    *g = 10;
+    for(size_t i = 0; i < 50; i++) {
+        d.push_back(i);
+    }
+    auto it = d.begin() + 10;
+    auto res = d.erase(it);
+    ASSERT_EQUAL(11, *res);
+    ASSERT_EQUAL(1, *d.erase(d.begin()));
+//    ASSERT_EQUAL()
 }
 
 
@@ -182,6 +233,8 @@ void all_deque_tests() {
     RUN_TEST(tr, at_test);
     RUN_TEST(tr, copy_constr_test);
     RUN_TEST(tr, copy_constr_with_item_test);
-    RUN_TEST(tr, link_test);
+//    RUN_TEST(tr, link_test);
     RUN_TEST(tr, iterator_test);
+    RUN_TEST(tr, insert_test);
+    RUN_TEST(tr, erase_test);
 }
