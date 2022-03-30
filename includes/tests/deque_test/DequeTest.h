@@ -17,7 +17,7 @@ void simple_test() {
 }
 
 void push_and_pop_front_test() {
-    const int n = 100;
+    const int n = 8;
     const int size = 1000;
     Deque<int> d(1);
     for(int i = 0; i < n; i++) {
@@ -129,6 +129,7 @@ void copy_constr_test() {
     }
     Deque copy(d);
     for(size_t i = 0; i < copy.size(); i++) {
+//        cout << copy[i] << endl;
         ASSERT_EQUAL(i, copy[i]);
     }
     Deque<int> copy_2;
@@ -154,11 +155,12 @@ void link_test() {
         d.push_front(i);
     }
     auto it = d.begin();
-    ASSERT_EQUAL(999, *it);
+    int& num = *it;
+    ASSERT_EQUAL(999, num);
     for(size_t i = 0; i < 10000; i++) {
         d.push_front(2);
     }
-    ASSERT_EQUAL(999, *it);
+    ASSERT_EQUAL(999, num);
 }
 
 void iterator_test() {
@@ -233,7 +235,7 @@ void all_deque_tests() {
     RUN_TEST(tr, at_test);
     RUN_TEST(tr, copy_constr_test);
     RUN_TEST(tr, copy_constr_with_item_test);
-//    RUN_TEST(tr, link_test);
+    RUN_TEST(tr, link_test);
     RUN_TEST(tr, iterator_test);
     RUN_TEST(tr, insert_test);
     RUN_TEST(tr, erase_test);
