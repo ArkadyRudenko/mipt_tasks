@@ -181,7 +181,7 @@ void iterator_test() {
     ASSERT_EQUAL(true, (it != end));
     ASSERT_EQUAL(true, (it <= end));
     ASSERT_EQUAL(true, it > (end - it));
-    Deque<int>::deque_iterator b = d.begin();
+    Deque<int>::iterator b = d.begin();
 }
 
 void const_iterator_test() {
