@@ -124,20 +124,20 @@ void at_test() {
 
 void copy_constr_test() {
     Deque<int> d(1);
-    for(int i = 0; i < 500; i++) {
+    for(int i = 0; i < 50; i++) {
         d.push_back(i);
     }
-    Deque copy(d);
+    Deque<int> copy(d);
     for(size_t i = 0; i < copy.size(); i++) {
-//        cout << copy[i] << endl;
         ASSERT_EQUAL(i, copy[i]);
     }
+    d.push_back(77);
     Deque<int> copy_2;
     copy_2 = copy;
     for(size_t i = 0; i < copy_2.size(); i++) {
         ASSERT_EQUAL(i, copy_2[i]);
     }
-    ASSERT_EQUAL(500, copy.size());
+    ASSERT_EQUAL(50, copy.size());
 }
 
 void copy_constr_with_item_test() {
@@ -156,39 +156,31 @@ void link_test() {
     }
     auto it = d.begin();
     int& num = *it;
+    int* num_ptr = &*++it;
     ASSERT_EQUAL(999, num);
+    ASSERT_EQUAL(998, *num_ptr);
     for(size_t i = 0; i < 10000; i++) {
         d.push_front(2);
     }
     ASSERT_EQUAL(999, num);
+    ASSERT_EQUAL(998, *num_ptr);
 }
 
 void iterator_test() {
     Deque<int> d(10);
-    for(size_t i = 0; i < 10; i++) {
+    for(size_t i = 0; i < 1000; i++) {
         d.push_back(i);
     }
     auto it = d.begin();
-    auto end = d.end();
-    *it = 44;
-    ASSERT_EQUAL(44, *it);
-    int i = 0;
-    *it = 0;
-    for(auto begin = d.begin(); begin != d.end(); begin++) {
-        ASSERT_EQUAL(i++, *begin);
+    auto test_iter = it + 100;
+    for(size_t i = 0; i < 10000; i++) {
+        d.push_front(i);
     }
-    ASSERT_EQUAL(true, (it < end));
-    ASSERT_EQUAL(true, (it != end));
-    ASSERT_EQUAL(true, (it <= end));
-    ASSERT_EQUAL(true, it > (end - it));
-    Deque<int>::iterator b = d.begin();
+    ASSERT_EQUAL(100, *test_iter);
 }
 
 void const_iterator_test() {
 
-//    for(auto begin = d.begin(); begin != d.end(); begin++) {
-//        ASSERT_EQUAL(i++, *begin);
-//    }
 }
 
 void insert_test() {
@@ -220,7 +212,6 @@ void erase_test() {
     auto res = d.erase(it);
     ASSERT_EQUAL(11, *res);
     ASSERT_EQUAL(1, *d.erase(d.begin()));
-//    ASSERT_EQUAL()
 }
 
 

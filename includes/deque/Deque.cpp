@@ -1,29 +1,24 @@
 
 template<typename T>
 Deque<T>::Deque() :
-        begin_(chunks, 0, chunk_size / 2),
+        begin_(*this, 0, chunk_size / 2),
         end_(begin_),
-        size_main_arr(1) {
-    chunks = new T *[size_main_arr];
+        size_main_arr(1),
+        chunks(new T *[size_main_arr]) {
     chunks[0] = new T[chunk_size];
-    begin_.setChunks(chunks);
-    end_.setChunks(chunks);
 }
 
 template<typename T>
 Deque<T>::Deque(int capacity) :
         capacity(capacity),
-        begin_(chunks, ((capacity / chunk_size) + 1) / 2, chunk_size / 2),
+        begin_(*this, ((capacity / chunk_size) + 1) / 2, chunk_size / 2), // middle chunk, middle index
         end_(begin_),
-        size_main_arr((capacity / chunk_size) + 1) {
-    chunks = new T *[size_main_arr];
+        size_main_arr((capacity / chunk_size) + 1),
+        chunks(new T *[size_main_arr])
+        {
     for (size_t i = 0; i < size_main_arr; i++) {
-        try {
-            chunks[i] = new T[chunk_size];
-        } catch (...) { cout << "\nFAIL\n;"; }
+        chunks[i] = new T[chunk_size];
     }
-    begin_.setChunks(chunks);
-    end_.setChunks(chunks);
 }
 
 template<typename T>
@@ -36,32 +31,31 @@ Deque<T>::Deque(int size, T item)
 
 template<typename T>
 Deque<T>::Deque(const Deque &deq) :
-        end_(deq.end_), begin_(deq.begin_) {
+        end_({*this, deq.end_.getChunk(), deq.end_.getIndex()}),
+        begin_({*this, deq.begin_.getChunk(), deq.begin_.getIndex()}) {
     *this = deq;
 }
 
 template<typename T>
 Deque<T> &Deque<T>::operator=(const Deque &deq) {
-    if(chunks) {
+    if (chunks) {
         for (size_t i = 0; i < size_main_arr; i++) {
             delete[] chunks[i];
         }
         delete[] chunks;
     }
-    size_main_arr = deq.size_main_arr;
     capacity = deq.capacity;
     sz = deq.sz;
-    chunks = new T*[size_main_arr];
+    offset = deq.offset;
+    size_main_arr = deq.size_main_arr;
+    chunks = new T *[size_main_arr];
     for (size_t i = 0; i < size_main_arr; i++) {
         chunks[i] = new T[chunk_size];
     }
-    end_ = deq.end_;  begin_ = deq.begin_;
-    end_.setChunks(chunks);
-    begin_.setChunks(chunks);
     auto tmp = begin_;
-    for (auto tmp_begin = deq.begin_; tmp_begin != deq.end_;) {
-        *tmp = *tmp_begin;
-        tmp_begin++; tmp++;
+    for (auto tmp_begin : deq) {
+        *tmp = tmp_begin;
+        tmp++;
     }
     return *this;
 }
@@ -85,11 +79,9 @@ void Deque<T>::push_front(T item) {
     if (begin_ == end_) {
         *begin_ = item;
         end_++;
-    } else if (!begin_.getChunk() and !begin_.getIndex()) {
+    } else if ((begin_.getChunk() + offset) == 0 and !begin_.getIndex()) {
         relocation_begin();
-        begin_.setIndex(chunk_size - 1);
-        *begin_ = item;
-        end_.setChunk(end_.getChunk() + 1);
+        *--begin_ = item;
     } else {
         *(--begin_) = item;
     }
@@ -118,6 +110,11 @@ T &Deque<T>::operator[](size_t index) {
 }
 
 template<typename T>
+const T &Deque<T>::operator[](size_t index) const {
+    return *(begin_ + index);
+}
+
+template<typename T>
 T &Deque<T>::at(size_t index) {
     if (index > sz - 1) {
         throw std::out_of_range("bad index");
@@ -127,22 +124,16 @@ T &Deque<T>::at(size_t index) {
 }
 
 template<typename T>
-const T &Deque<T>::operator[](size_t index) const {
-    return *(begin_ + index);
-}
-
-template<typename T>
 void Deque<T>::relocation_begin() {
     size_main_arr++;
     T **new_arr = new T *[size_main_arr];
     new_arr[0] = new T[chunk_size];
+    offset++;
     for (size_t i = 0; i < size_main_arr - 1; i++) {
         new_arr[i + 1] = chunks[i];
     }
     delete[] chunks;
     chunks = new_arr;
-    begin_.setChunks(chunks);
-    end_.setChunks(chunks);
 }
 
 template<typename T>
@@ -155,8 +146,6 @@ void Deque<T>::relocation_end() {
     delete[] chunks;
     chunks = new_arr;
     size_main_arr++;
-    begin_.setChunks(chunks);
-    end_.setChunks(chunks);
 }
 
 template<typename T>

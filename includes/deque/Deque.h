@@ -7,86 +7,72 @@ template<typename T>
 class Deque {
 public:
     Deque();
-
     explicit Deque(int capacity);
-
     Deque(const Deque &deq);
-
     Deque(int size, T item);
-
     ~Deque();
 
     size_t size() const;
-
     T &at(size_t index);
 
     void push_back(T item);
-
     void push_front(T item);
-
     void pop_back();
-
     void pop_front();
 
     Deque &operator=(const Deque &deq);
-
     T &operator[](size_t index);
-
     const T &operator[](size_t index) const;
 
 private:
-    static const size_t chunk_size = 1000; // 2 across the line
+    static const size_t chunk_size = 1000; // 21 across the line
     size_t sz = 0;
     size_t size_main_arr = 0;
     int capacity = 0;
     T **chunks = nullptr;
 
-    void relocation_begin();
+    size_t offset = 0;
 
+    void relocation_begin();
     void relocation_end();
 
 private:
     template<class U>
     class deque_iterator {
     private:
-        size_t chunk = 0;
+        Deque<U> &parent;
+        int chunk = 0;
         size_t index = 0;
-        U **chunks = nullptr;
     public:
-        size_t getChunk() const {
+        int getChunk() const {
             return chunk;
-        }
-
-        void setChunks(U **chunks) {
-            deque_iterator::chunks = chunks;
-        }
-
-        void setChunk(size_t chunk) {
-            deque_iterator::chunk = chunk;
         }
 
         size_t getIndex() const {
             return index;
         }
-
-        void setIndex(size_t index) {
-            deque_iterator::index = index;
-        }
-
-        deque_iterator(U **chunks,
-                       size_t chunk,
+        deque_iterator(Deque<U> &parent,
+                       int chunk,
                        size_t index)
-                : chunks(chunks),
+                : parent(parent),
                   chunk(chunk),
                   index(index) {}
 
         deque_iterator(const deque_iterator &it)
-                : chunks(it.chunks),
-                  index(it.index),
-                  chunk(it.chunk) {}
+                : parent(it.parent),
+                  chunk(it.chunk),
+                  index(it.index)
+                   {}
+
+        deque_iterator<U> &operator=(const deque_iterator &it) {
+            parent = it.parent;
+            chunk = it.chunk;
+            index = it.index;
+            return *this;
+        }
 
         U &operator*() {
-            return chunks[chunk][index];
+            return parent.chunks[parent.offset + chunk][index];
         }
 
         deque_iterator &operator++() {
@@ -120,7 +106,7 @@ private:
         }
 
         U *operator->() {
-            return &chunks[chunk][index];
+            return &parent.chunks[parent.offset + chunk][index];
         }
 
         bool operator<(const deque_iterator &it) {
@@ -168,14 +154,14 @@ private:
         }
 
         deque_iterator operator+(int n) {
-            deque_iterator copy(chunks,
+            deque_iterator copy(parent,
                                 chunk + (index + n) / chunk_size,
                                 (index + n) % chunk_size);
             return copy;
         }
 
         deque_iterator operator-(const deque_iterator &it) {
-            deque_iterator res(this->chunks,
+            deque_iterator res(this->parent,
                                chunk - it.chunk,
                                index - it.index);
             return res;
