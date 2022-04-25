@@ -1,15 +1,11 @@
 #include <iostream>
-#include <string>
-#include <vector>
-#include <deque>
+#include <unordered_set>
+#include "ListTest.h"
 
-#include "StringTests.h"
-//#include "Deque.h"
-#include "DequeTest.h"
 
-using namespace std;
 
 int main() {
-    all_deque_tests();
-    return 0;
+//    cout << sizeof(_List_node<int>) << "\n";
+    ListTest::list_tests();
+    delete p;
 }

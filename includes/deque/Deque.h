@@ -20,16 +20,16 @@ public:
     void pop_back();
     void pop_front();
 
-    Deque &operator=(const Deque &deq);
-    T &operator[](size_t index);
-    const T &operator[](size_t index) const;
+    Deque& operator=(const Deque& deq);
+    T& operator[](size_t index);
+    const T& operator[](size_t index) const;
 
 private:
-    static const size_t chunk_size = 1000; // 21 across the line
-    size_t sz = 0;
-    size_t size_main_arr = 0;
+    static const constexpr size_t KChunkSize = 1000; // 21 across the line
+    size_t sz_ = 0;
+    size_t size_main_arr_ = 0;
     int capacity = 0;
-    T **chunks = nullptr;
+    T** chunks = nullptr;
 
     size_t offset = 0;
 
@@ -62,7 +62,7 @@ private:
                 : parent(it.parent),
                   chunk(it.chunk),
                   index(it.index)
-                   {}
+        {}
 
         deque_iterator<U> &operator=(const deque_iterator &it) {
             parent = it.parent;
@@ -76,7 +76,7 @@ private:
         }
 
         deque_iterator &operator++() {
-            if (index == chunk_size - 1) {
+            if (index == KChunkSize - 1) {
                 index = 0;
                 chunk++;
             } else {
@@ -87,7 +87,7 @@ private:
 
         deque_iterator &operator--() {
             if (index == 0) {
-                index = chunk_size - 1;
+                index = KChunkSize - 1;
                 chunk--;
             } else {
                 index--;
@@ -155,8 +155,8 @@ private:
 
         deque_iterator operator+(int n) {
             deque_iterator copy(parent,
-                                chunk + (index + n) / chunk_size,
-                                (index + n) % chunk_size);
+                                chunk + (index + n) / KChunkSize,
+                                (index + n) % KChunkSize);
             return copy;
         }
 
@@ -192,7 +192,7 @@ public:
     }
 
     deque_iterator<T> insert(deque_iterator<T> pos, T item) {
-        if (end_.getChunk() == size_main_arr and !end_.getIndex()) {
+        if (end_.getChunk() == size_main_arr_ and !end_.getIndex()) {
             relocation_end();
         }
         auto it = end_++;
@@ -202,7 +202,7 @@ public:
             it--;
         }
         *pos = item;
-        sz++;
+        sz_++;
         return pos;
     }
 
@@ -215,7 +215,7 @@ public:
             pos--;
         }
         begin_++;
-        sz--;
+        sz_--;
         return ++copy;
     }
 };
