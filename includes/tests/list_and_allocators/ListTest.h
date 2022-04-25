@@ -8,7 +8,7 @@
 namespace ListTest {
 
     void simple_test() {
-        const int size = 10;
+        const int size = 100000;
         using type = std::string;
         {
             LOG_DURATION("stl Alloc")

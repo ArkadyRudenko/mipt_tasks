@@ -17,7 +17,7 @@ public:
             void* free_ptr = *free_ptrs_.begin();
             free_ptrs_.erase(free_ptrs_.begin());
             return free_ptr;
-        } else if(offset_ + chunkSize <= SizeOfPool) {
+        } else if(offset_ <= SizeOfPool) {
 //            cout << "Allocated\n";
             offset_ += chunkSize;
             return pool_ + (offset_ - chunkSize);
@@ -26,7 +26,7 @@ public:
         }
     }
 
-    void* deallocate(void* ptr) {
+    void deallocate(void* ptr) {
         free_ptrs_.insert(ptr);
     }
 
