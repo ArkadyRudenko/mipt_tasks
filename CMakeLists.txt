@@ -3,7 +3,7 @@ project(mipt_tasks)
 
 #SET(MYCOMPILE_FLAGS "-Wall -Wextra")
 
-set(Sanitizers 0)
+set(Sanitizers 1)
 
 if(Sanitizers EQUAL 1)
     message("Compile with Sanitizers")
@@ -17,7 +17,13 @@ if(Sanitizers EQUAL 1)
 endif()
 
 
-include_directories(include/tests)
+include_directories(includes/tests)
+include_directories(includes/tests/list_and_allocators)
+include_directories(includes/tests/deque_test)
+include_directories(includes/tests/string_test)
+include_directories(includes/string)
+include_directories(includes/deque)
+include_directories(includes/list_and_allocators)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 

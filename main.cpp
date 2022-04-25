@@ -1,6 +1,11 @@
 #include <iostream>
+#include <unordered_set>
+#include "ListTest.h"
+
+
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
+//    cout << sizeof(_List_node<int>) << "\n";
+    ListTest::list_tests();
+    delete p;
 }
