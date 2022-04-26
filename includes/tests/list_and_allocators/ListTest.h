@@ -8,7 +8,7 @@
 namespace ListTest {
 
     void simple_test() {
-        const int size = 100000;
+        const int size = 1000000;
         using type = std::string;
         {
             LOG_DURATION("stl Alloc")
@@ -22,6 +22,11 @@ namespace ListTest {
                 auto removed = it;
                 it++;
                 stl_list.erase(removed);
+            }
+            auto inserter = stl_list.begin();
+            for (size_t i = size / 2; i < size; ++i) {
+                inserter++;
+                stl_list.insert(inserter, "string");
             }
         }
 
@@ -37,6 +42,11 @@ namespace ListTest {
                 auto removed = it;
                 it++;
                 stl_list.erase(removed);
+            }
+            auto inserter = stl_list.begin();
+            for (size_t i = size / 2; i < size; ++i) {
+                inserter++;
+                stl_list.insert(inserter, "string");
             }
         }
     }
