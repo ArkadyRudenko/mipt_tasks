@@ -12,14 +12,15 @@ private:
     static const size_t chunkSize = 48;
     std::vector<void*> free_data_;
     std::vector<void*> my_data_;
-    FixedAllocator<chunkSize> fixed_allocator_;
+    std::shared_ptr<FixedAllocator<chunkSize>> fixed_allocator_;
 public:
-    FastAllocator() noexcept = default;
+    FastAllocator() noexcept : fixed_allocator_(make_shared<FixedAllocator<chunkSize>>()) {};
 
-    FastAllocator(const FastAllocator& other) noexcept = default;
+    FastAllocator(const FastAllocator& other) noexcept : fixed_allocator_(other.fixed_allocator_) {}
 
     template<typename U>
-    FastAllocator(const FastAllocator<U>& other) noexcept {}
+    FastAllocator(const FastAllocator<U>& other) noexcept : fixed_allocator_(make_shared<
+            FixedAllocator<chunkSize>>()) {}
 
     using pointer = T*;
     using value_type = T;
@@ -37,7 +38,7 @@ public:
                 free_data_.pop_back();
                 return reinterpret_cast<T*>(ptr);
             }
-            return reinterpret_cast<T*>(fixed_allocator_.allocate(n * sizeof(T)));
+            return reinterpret_cast<T*>(fixed_allocator_->allocate(n * sizeof(T)));
         } else {
             my_data_.push_back(::operator new(n * sizeof(T)));
             return reinterpret_cast<T*>(my_data_.back());
@@ -48,8 +49,8 @@ public:
         free_data_.push_back(ptr);
     }
 
-    template<class... Args>
-    void construct(T* ptr, const Args&& ... args) /* without move */ {
+    template<typename... Args>
+    void construct(T* ptr, const Args& ... args) /* without move */ {
         ::new(ptr) T(args...);
     }
 
@@ -63,6 +64,9 @@ public:
         }
     }
 
+    FastAllocator<T> select_on_container_copy_construction() const {
+        return FastAllocator<T>(*this);
+    }
 };
 
 
