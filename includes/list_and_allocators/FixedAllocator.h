@@ -1,42 +1,37 @@
-#include <unordered_set>
 #include <memory>
+#include <vector>
 
 template<size_t chunkSize>
 class FixedAllocator {
+private:
+    std::vector<std::byte*> pools_;
+    size_t offset_ = 0;
+    static const size_t SizeOfPool = 100000 * chunkSize;
 public:
-    FixedAllocator() : pool_(
-            reinterpret_cast<byte*>(
-                    ::operator new(SizeOfPool))) {}
+    FixedAllocator() {
+        pools_.push_back((reinterpret_cast<byte*>(
+                                ::operator new(SizeOfPool))));
+    }
 
-    FixedAllocator(const FixedAllocator& other)
-    : pool_(other.pool_), offset_(other.offset_), free_ptrs_(other.free_ptrs_)
-    {}
+    FixedAllocator(const FixedAllocator& other) = default;
 
     void* allocate(size_t) {
-        if(!free_ptrs_.empty()) {
-            void* free_ptr = *free_ptrs_.begin();
-            free_ptrs_.erase(free_ptrs_.begin());
-            return free_ptr;
-        } else if(offset_ + chunkSize <= SizeOfPool) {
-//            cout << "Allocated\n";
+        if (offset_ + chunkSize < SizeOfPool) {
             offset_ += chunkSize;
-            return pool_ + (offset_ - chunkSize);
+            return pools_.back() + offset_;
         } else {
-            throw bad_alloc();
+            pools_.push_back((reinterpret_cast<byte*>(
+                    ::operator new(SizeOfPool))));
+            offset_ = 0;
+            return pools_.back() + offset_;
         }
     }
 
-    void* deallocate(void* ptr) {
-        free_ptrs_.insert(ptr);
-    }
+    void deallocate(void* ptr) {}
 
     ~FixedAllocator() {
-        ::operator delete(pool_);
+        for (const auto pool: pools_) {
+            ::operator delete(pool);
+        }
     }
-
-private:
-    std::byte* pool_;
-    size_t offset_ = 0;
-    std::unordered_set<void*> free_ptrs_;
-    static const size_t SizeOfPool = 1000000 * chunkSize;
 };
