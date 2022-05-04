@@ -148,7 +148,7 @@ namespace ListTest {
         {
             LOG_DURATION("stl Alloc and MyList")
             List <type, FastAllocator<type>> my_list;
-
+//            list<type, FastAllocator<type>> my_list;
             for (size_t i = 0; i < size; ++i) {
                 my_list.push_front("String");
             }
@@ -167,7 +167,7 @@ namespace ListTest {
 
         {
             LOG_DURATION("My Alloc and MyList")
-
+//            list<type> my_list;
             List <type, FastAllocator<type>> my_list;
             for (size_t i = 0; i < size; ++i) {
                 my_list.push_front("String");

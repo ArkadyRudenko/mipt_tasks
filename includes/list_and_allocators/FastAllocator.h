@@ -30,6 +30,9 @@ public:
         using other = FastAllocator<U>;
     };
 
+    template<typename U>
+    using rebind_alloc = allocator<U>;
+
 public:
     T* allocate(size_t n) {
         if (n * sizeof(T) == chunkSize) {

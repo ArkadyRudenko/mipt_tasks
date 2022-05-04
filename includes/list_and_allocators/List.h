@@ -41,7 +41,8 @@ private:
     BaseNode fake_node;
     size_t sz = 0;
 
-    using RebindAlloc = typename Allocator::template rebind<Node>::other;
+//    using RebindAlloc = typename Allocator::template rebind<Node>::other;
+    using RebindAlloc = typename allocator_traits<Allocator>::template rebind_alloc<Node>;
     using AllocTraits = allocator_traits<RebindAlloc>;
     RebindAlloc alloc_;
 
