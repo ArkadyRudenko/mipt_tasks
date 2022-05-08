@@ -20,9 +20,11 @@ include_directories(includes/tests)
 include_directories(includes/tests/list_and_allocators)
 include_directories(includes/tests/deque_test)
 include_directories(includes/tests/string_test)
+include_directories(includes/tests/unordered_map_test)
 include_directories(includes/string)
 include_directories(includes/deque)
 include_directories(includes/list_and_allocators)
+include_directories(includes/unordered_map)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 

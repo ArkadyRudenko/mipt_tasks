@@ -1,3 +1,4 @@
+#pragma once
 #include <type_traits>
 #include "boost/container/allocator_traits.hpp"
 
@@ -270,10 +271,10 @@ List<T, Allocator>::List(const List& other) { // TODO
 }
 
 template<typename T, typename Allocator>
-List<T, Allocator>& List<T, Allocator>::operator=(const List& list) {
-    delete_nodes();
-    alloc_(list.get_allocator());
-    for (auto it : list) {
-        this->push_back(*it);
-    }
-}
+List<T, Allocator>& List<T, Allocator>::operator=(const List& list) = default;
+//    delete_nodes();
+//    alloc_(list.get_allocator());
+//    for (auto it : list) {
+//        this->push_back(*it);
+//    }
+//}
