@@ -9,6 +9,7 @@ private:
 
         virtual void destroy(T* obj) {};
         virtual void deallocate() {};
+        virtual T* get_ptr() {};
 
         virtual ~BaseControlBlock() = default;
     };
@@ -16,25 +17,45 @@ private:
     template<typename Deleter> // for simple ptr
     struct ControlBlockRegular : public BaseControlBlock {
         ControlBlockRegular(T* ptr, Deleter del) : ptr(ptr), del(del) {}
-
         T* ptr = nullptr;
         Deleter del;
 
         void destroy(T* obj) override {
             del(obj);
         }
+
+        T* get_ptr() override {
+            return ptr;
+        }
+
+        void deallocate() override {
+            std::allocator<ControlBlockRegular<Deleter>> alloc_for_cbr;
+            alloc_for_cbr.destroy(this);
+            alloc_for_cbr.deallocate(this, 1);
+        }
     };
 
     // for makeShared
+    template<typename Alloc>
     struct ControlBlockMakeShared : public BaseControlBlock {
         T* ptr = &object;
         T object;
-
+        Alloc alloc;
         template<typename... Args>
-        explicit ControlBlockMakeShared(Args&& ... args) : object(std::forward<Args>(args)...) {}
+        explicit ControlBlockMakeShared(const Alloc& alloc, Args&& ... args) : object(std::forward<Args>(args)...), alloc(alloc) {}
 
         void destroy(T* obj) override {
             ptr->~T();
+        }
+
+        T* get_ptr() override {
+            return ptr;
+        }
+
+        void deallocate() override {
+            using RebindAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<ControlBlockMakeShared<Alloc>>;
+            RebindAlloc alloc_for_cbr;
+            alloc_for_cbr.deallocate(this, 1);
         }
     };
 
@@ -49,40 +70,37 @@ private:
     friend SharedPtr<U>
     allocateShared(const Alloc& alloc, Args&& ... args);
 
-    struct AllocateSharedBase {
-        virtual void deallocate(ControlBlockMakeShared* block_ptr) {}
-    };
-
-    template<typename Alloc>
-    struct AllocateSharedTag : public AllocateSharedBase {
-        AllocateSharedTag(Alloc alloc) : alloc(alloc) {}
-
-        Alloc alloc;
-
-        void deallocate(ControlBlockMakeShared* block_ptr) override {
-            alloc.deallocate(block_ptr, 1);
-        }
-    };
-
-    AllocateSharedBase* allocate_shared_tag = nullptr;
+    struct allocate_shared_tag {};
 
     template<typename Alloc, typename... Args>
-    SharedPtr(AllocateSharedBase allocate_shared_base, Alloc alloc, Args&& ... args) {
-        using RebindAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<ControlBlockMakeShared>;
+    SharedPtr(allocate_shared_tag, const Alloc& alloc, Args&& ... args) {
+        using RebindAlloc = typename std::allocator_traits<Alloc>::template rebind_alloc<ControlBlockMakeShared<Alloc>>;
         RebindAlloc alloc_;
-        ControlBlockMakeShared* new_ptr = alloc_.allocate(1);
-        alloc_.construct(new_ptr, std::forward<Args>(args)...);
+        ControlBlockMakeShared<Alloc>* new_ptr = alloc_.allocate(1);
+        alloc_.construct(new_ptr, alloc, std::forward<Args>(args)...);
         ptr = &new_ptr->object;
         cptr = static_cast<BaseControlBlock*>(new_ptr);
-        allocate_shared_tag = new AllocateSharedTag<RebindAlloc>(alloc_);
         cptr->shared_count = 1;
     }
 
-    struct weak_ptr_tag {
-    };
+    void destroy_shared() {
+        if (cptr) {
+            --cptr->shared_count;
+            if (cptr->shared_count > 0) {
+                return;
+            }
+            cptr->destroy(ptr);
+            if (cptr->weak_count == 0) {
+                cptr->deallocate();
+            }
+        }
+    }
 
-    SharedPtr(weak_ptr_tag, BaseControlBlock* ptr) : cptr(ptr) {}
+    struct weak_ptr_tag {};
 
+    SharedPtr(weak_ptr_tag, BaseControlBlock* cptr_) : cptr(cptr), ptr(cptr->get_ptr()) {
+        ++cptr->shared_count;
+    }
 public:
     // TODO need inheritance for all ctrs
     SharedPtr() = default;
@@ -94,8 +112,7 @@ public:
 
     SharedPtr(const SharedPtr<T>& other) :
             cptr(other.cptr),
-            ptr(other.ptr),
-            allocate_shared_tag(other.allocate_shared_tag) {
+            ptr(other.ptr) {
         ++cptr->shared_count;
     }
 
@@ -103,11 +120,18 @@ public:
         other.cptr = other.ptr = nullptr;
     }
 
-    template<typename U>
-    SharedPtr<T>& operator=(const SharedPtr<U> other) {
-//        if( /* we have only BaseControlBlock*/) {
-//
-//        }
+    SharedPtr& operator=(const SharedPtr& other) noexcept {
+        if (this == &other) { return *this; }
+        destroy_shared();
+        cptr = other.cptr;
+        ptr = other.ptr;
+        ++cptr->shared_count;
+        return *this;
+    }
+
+    template<typename Y>
+    SharedPtr& operator=(const SharedPtr<Y>& other) noexcept {
+        // TODO for derived
     }
 
     template<typename Deleter>
@@ -128,11 +152,11 @@ public:
     }
 
     T& operator*() const {
-        return *static_cast<ControlBlockRegular<int>*>(cptr)->ptr; // TODO
+        return *cptr->get_ptr();
     }
 
     T* operator->() const {
-        return static_cast<ControlBlockRegular<int>*>(cptr)->ptr; // TODO
+        return cptr->get_ptr();
     }
 
     size_t use_count() const {
@@ -140,25 +164,13 @@ public:
     }
 
     ~SharedPtr() {
-        --cptr->shared_count;
-        if (cptr->shared_count > 0) {
-            return;
-        }
-        cptr->destroy(ptr);
-        if (cptr->weak_count == 0) {
-            if (allocate_shared_tag) {
-                allocate_shared_tag->deallocate(static_cast<ControlBlockMakeShared*>(cptr));
-                ::operator delete(allocate_shared_tag); // TODO
-            } else {
-                ::operator delete(cptr); // TODO
-            }
-        }
+        destroy_shared();
     }
 };
 
 template<typename U, typename Alloc, typename... Args>
 SharedPtr<U> allocateShared(const Alloc& alloc, Args&& ... args) {
-    return SharedPtr<U>(typename SharedPtr<U>::AllocateSharedBase(), alloc, std::forward<Args>(args)...);
+    return SharedPtr<U>(typename SharedPtr<U>::allocate_shared_tag(), alloc, std::forward<Args>(args)...);
 }
 
 template<typename T, typename... Args>
@@ -169,18 +181,21 @@ SharedPtr<T> makeShared(Args&& ... args) {
 template<typename T>
 class WeakPtr {
 private:
-    typename SharedPtr<T>::template ControlBlock<T> cptr;
+    typename SharedPtr<T>::BaseControlBlock* cptr;
 public:
     WeakPtr(const SharedPtr<T>& ptr) : cptr(ptr.cptr) {
-
+        ++cptr->weak_count;
     }
 
     bool expired() const {
-        return cptr->shared_count > 0;
+        return cptr->shared_count == 0;
     }
 
     SharedPtr<T> lock() const {
-
+        if (this->expired()) {
+            return SharedPtr<T>();
+        }
+        return SharedPtr<T>(typename SharedPtr<T>::weak_ptr_tag{}, cptr);
     }
 
     ~WeakPtr() {
