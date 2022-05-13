@@ -6,7 +6,7 @@
 
 struct Base {
     ~Base() {
-        std::cout << "Deleted Base\n";
+//        std::cout << "Deleted Base\n";
     }
 };
 
@@ -15,7 +15,7 @@ struct Derived : public Base {
 
     }
     ~Derived() {
-        std::cout << "Deleted Derived\n";
+//        std::cout << "Deleted Derived\n";
     }
 };
 
@@ -51,6 +51,28 @@ TEST(SharedPtr, weak_ptr) {
     s = makeShared<int>(2);
     ASSERT_EQ(true, weakPtr.expired());
     auto new_ptr = weakPtr.lock();
+    WeakPtr<int> weakPtr_2(std::move(weakPtr));
+    ASSERT_EQ(true, weakPtr_2.expired());
+    ASSERT_EQ(1, s.use_count());
+}
+
+struct Node {
+    Node* left = nullptr;
+    Node* right = nullptr;
+};
+
+
+struct Del {
+    void operator()(Node* a) {
+//        std::cout << "I`m deleter of Node\n";
+    }
+};
+
+
+TEST(SharedPtr, Deleter) {
+    Node* node = new Node();
+    SharedPtr<Node> sharedPtr(node, Del());
+    delete node;
 }
 
 TEST(SharedPtr, shared_ptr_test) {
