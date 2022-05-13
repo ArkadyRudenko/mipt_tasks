@@ -9,7 +9,7 @@ private:
     static const size_t SizeOfPool = 100000 * chunkSize;
 public:
     FixedAllocator() {
-        pools_.push_back((reinterpret_cast<byte*>(
+        pools_.push_back((reinterpret_cast<std::byte*>(
                                 ::operator new(SizeOfPool))));
     }
 
@@ -20,7 +20,7 @@ public:
             offset_ += chunkSize;
             return pools_.back() + offset_;
         } else {
-            pools_.push_back((reinterpret_cast<byte*>(
+            pools_.push_back((reinterpret_cast<std::byte*>(
                     ::operator new(SizeOfPool))));
             offset_ = 0;
             return pools_.back() + offset_;

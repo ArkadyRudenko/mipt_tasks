@@ -29,7 +29,7 @@ include_directories(includes/unordered_map)
 include_directories(includes/shared_ptr)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
-
+# ------------ BOOST ------------------
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
@@ -40,8 +40,20 @@ if (Boost_FOUND)
     add_executable(progname file1.cxx file2.cxx)
     target_link_libraries(progname ${Boost_LIBRARIES})
 endif ()
+# ----------------------------------
 
 # ------------------TEST-------------------------------
+#include_directories(/usr/lib/x86_64-linux-gnu/cmake/GTest/GTestTargets.cmake)
+#
+#add_executable(
+#        GoogleTestDemo
+#        ${SOURCES}
+#)
+#
+#target_link_libraries(
+#        GoogleTestDemo gtest gtest_main
+#)
+
 add_executable(
         all_tests
         test/test_main.cpp

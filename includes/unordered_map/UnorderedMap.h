@@ -29,7 +29,7 @@ private:
     class List {
     public:
         List(const Allocator& alloc) : alloc_(
-                allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {}
+                std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {}
 
         List(const List& other) : List(other.alloc_) {
             for (BaseNode* node = other.fake_node.next; node != &fake_node;
@@ -70,8 +70,8 @@ private:
         BaseNode fake_node;
         size_t sz = 0;
 
-        using RebindAlloc = typename allocator_traits<Allocator>::template rebind_alloc<Node>;
-        using AllocTraits = allocator_traits<RebindAlloc>;
+        using RebindAlloc = typename std::allocator_traits<Allocator>::template rebind_alloc<Node>;
+        using AllocTraits = std::allocator_traits<RebindAlloc>;
         RebindAlloc alloc_;
     public:
 
@@ -152,7 +152,7 @@ private:
     using ListBaseNode = typename List::BaseNode;
     using ListNode = typename List::Node;
 
-    vector<ListNode*> buckets_;
+    std::vector<ListNode*> buckets_;
 
     void delete_table() {
         nodes_.delete_nodes();
@@ -201,17 +201,17 @@ private:
     using const_iterator = common_iterator<true>;
 
 public:
-    pair<iterator, bool> insert(const NodeType& nodeType) {
+    std::pair<iterator, bool> insert(const NodeType& nodeType) {
         return inside_insert(nodeType);
     }
 
-    pair<iterator, bool> insert(NodeType&& nodeType) {
+    std::pair<iterator, bool> insert(NodeType&& nodeType) {
         return inside_insert(std::move(nodeType));
     }
 
 private:
     template<typename T>
-    pair<iterator, bool> inside_insert(T&& value) {
+    std::pair<iterator, bool> inside_insert(T&& value) {
         size_t hash_of_node_type = hasher_(value.first) % size_of_buckets_;
         // ++load_factor_ and then rehash...
         if (!buckets_[hash_of_node_type]) {
@@ -242,7 +242,7 @@ public:
     }
 
     template<typename... Args>
-    pair<iterator, bool> emplace(Args&& ... args) {
+    std::pair<iterator, bool> emplace(Args&& ... args) {
         return this->insert(make_pair(std::forward<Args>(args)...));
     }
 
@@ -278,7 +278,7 @@ public:
             }
             find_node = static_cast<ListNode*>(static_cast<ListBaseNode*>(find_node)->next); // TODO
         }
-        throw out_of_range("Haven`t node\n");
+        throw std::out_of_range("Haven`t node\n");
     }
 
     Value& operator[](const Key& key) {
@@ -290,7 +290,7 @@ public:
             }
             find_node = static_cast<ListNode*>(static_cast<ListBaseNode*>(find_node)->next); // TODO
         }
-        if constexpr(is_default_constructible_v<Value>) {
+        if constexpr(std::is_default_constructible_v<Value>) {
             return (this->insert({key, Value()})).first->second;
         }
     }
@@ -357,7 +357,7 @@ UnorderedMap<Key, Value, Hash, Equal, Allocator>::UnorderedMap(
 template<typename Key, typename Value, typename Hash, typename Equal, typename Allocator>
 UnorderedMap<Key, Value, Hash, Equal, Allocator>::UnorderedMap(const UnorderedMap& other) :
         load_factor_(other.load_factor_), size_of_buckets_(other.size_of_buckets_), buckets_(size_of_buckets_),
-        nodes_(allocator_traits<Allocator>::select_on_container_copy_construction(other.nodes_.get_allocator())) {
+        nodes_(std::allocator_traits<Allocator>::select_on_container_copy_construction(other.nodes_.get_allocator())) {
     for (const auto node: other) {
         this->insert(node);
     }

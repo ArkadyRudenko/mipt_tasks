@@ -1,21 +1,23 @@
 #include "test_runner.h"
+#include "profile.h"
 #include "UnorderedMap.h"
+#include "FastAllocator.h"
 #include <random>
 
-struct S {
-    S() = default;
+struct Base {
+    Base() = default;
 
-    S(const S& s) = default;
+    Base(const Base& s) = default;
 
-    S(S&& s) : a(s.a) {
+    Base(Base&& s) : a(s.a) {
 //        cout << "I`m moved\n";
     }
 
-    S& operator=(S&& s) {
+    Base& operator=(Base&& s) {
 //        cout << "I`m operator= move\n";
     }
 
-    S(int a_) : a(a_) {}
+    Base(int a_) : a(a_) {}
 
     int a;
 };
@@ -37,14 +39,14 @@ void first_test() {
 }
 
 void insert_move_test() {
-    UnorderedMap<int, S> m;
+    UnorderedMap<int, Base> m;
     for (size_t i = 0; i < 10; ++i) {
-        m.insert({i, S(i)});
+        m.insert({i, Base(i)});
     }
     ASSERT_EQUAL(10, m.size());
-    UnorderedMap<int, S> m2;
+    UnorderedMap<int, Base> m2;
     for (size_t i = 9; i < 19; ++i) {
-        m2.insert({i, S(i)});
+        m2.insert({i, Base(i)});
     }
     ASSERT_EQUAL(10, m2.size());
     auto end = m2.begin();
@@ -53,20 +55,20 @@ void insert_move_test() {
     ASSERT_EQUAL(19, m.size());
     m.erase(m.begin());
     ASSERT_EQUAL(18, m.size());
-    m.emplace(2, S(2));
+    m.emplace(2, Base(2));
 }
 
 void pure_unordered_map() {
-    unordered_map<int, S> m;
-//    m.insert({1, S(1)});
-//    std::pair<int, S> p = {2, S(1)};
-    m.insert({1, S(7)});
-    m.insert({2, S(2)});
-    m.insert({3, S(3)});
-    m.insert({4, S(4)});
-    m.insert({5, S(5)});
-    m.insert({6, S(6)});
-    m.insert({6, S(6)});
+    std::unordered_map<int, Base> m;
+//    m.insert({1, Base(1)});
+//    std::pair<int, Base> p = {2, Base(1)};
+    m.insert({1, Base(7)});
+    m.insert({2, Base(2)});
+    m.insert({3, Base(3)});
+    m.insert({4, Base(4)});
+    m.insert({5, Base(5)});
+    m.insert({6, Base(6)});
+    m.insert({6, Base(6)});
     int key = 2;
 //    cout << m.at(1).a << '\n';
 //    ASSERT_EQUAL(4, m[4]);
@@ -80,13 +82,13 @@ void print(const Container& container) {
 }
 
 void copy_ctr_test() {
-    UnorderedMap<int, S> m;
+    UnorderedMap<int, Base> m;
     for (size_t i = 0; i < 10; ++i) {
-        m.insert({i, S(i)});
+        m.insert({i, Base(i)});
     }
-    UnorderedMap<int, S> copy(m);
+    UnorderedMap<int, Base> copy(m);
     for (size_t i = 10; i < 20; ++i) {
-        copy.insert({i, S(i)});
+        copy.insert({i, Base(i)});
     }
 //    print(m);
 //    print(copy);
@@ -113,12 +115,13 @@ struct Key {
 
 struct Value {
     int a;
+
 //    Value() = default;
     Value(int a) : a(a) {};
 };
 
 template<>
-struct hash<Key> {
+struct std::hash<Key> {
     size_t operator()(const Key& key) const {
         return key.b;
     }
@@ -134,11 +137,12 @@ namespace std {
 }
 
 void operator_copy_ctr_test() {
-    hash<Key> hasher;
+    std::hash<Key> hasher;
     std::equal_to<Key> equal_to_;
     FastAllocator<int> allocator;
 
-    UnorderedMap<Key, Value, hash<Key>, equal_to<Key>, FastAllocator<int>> unorderedMap(100, hasher, equal_to_, allocator);
+    UnorderedMap<Key, Value, std::hash<Key>, std::equal_to<Key>, FastAllocator<int>> unorderedMap(100, hasher,
+                                                                                                  equal_to_, allocator);
 
     std::random_device dev;
     std::mt19937 rng(dev());
@@ -151,31 +155,46 @@ void operator_copy_ctr_test() {
         }
     }
     unorderedMap.insert({Key(1, 1), Value(1)});
-    auto it = unorderedMap.find(Key(1,1));
-    if(it != unorderedMap.end())  { cout << "finded\n"; }
-    unorderedMap[Key(1,1)] = Value(7);
-    ASSERT_EQUAL(7, (*unorderedMap.find(Key(1,1))).second.a);
+    auto it = unorderedMap.find(Key(1, 1));
+    if (it != unorderedMap.end()) { cout << "finded\n"; }
+    unorderedMap[Key(1, 1)] = Value(7);
+    ASSERT_EQUAL(7, (*unorderedMap.find(Key(1, 1))).second.a);
+}
 
-// 928 834
-// 1301 845
-//1076 654 626
+void speed_test() {
+    {
+        LOG_DURATION("MY_MAP");
+        std::hash<Key> hasher;
+        std::equal_to<Key> equal_to_;
+        FastAllocator<int> allocator;
 
-//    cout << unorderedMap.size() << '\n';
-//    {
-//        LOG_DURATION("COPY");
-//        UnorderedMap m(unorderedMap);
-//    }
-//    {
-//        LOG_DURATION("MOVE");
-//        UnorderedMap m(std::move(unorderedMap));
-//    }
-//
-//    {
-//        UnorderedMap<int, int> m;
-//        m.insert({1,1});
-//        auto it = m.find(1);
-//        cout << it->second <<'\n';
-//    }
+        UnorderedMap<Key, Value, std::hash<Key>, std::equal_to<Key>, FastAllocator<int>> unorderedMap_(100, hasher,
+                                                                                                       equal_to_,
+                                                                                                       allocator);
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> dist6(0, 1000); // distribution in range [1, 6]
+        for (size_t i = 0; i < 10000; ++i) {
+            unorderedMap_.insert({Key(dist6(rng), dist6(rng)), Value(dist6(rng))});
+        }
+
+    }
+    {
+        LOG_DURATION("STL_MAP");
+        std::hash<Key> hasher;
+        std::equal_to<Key> equal_to_;
+
+        unordered_map<Key, Value, std::hash<Key>, std::equal_to<Key>> unorderedMap1(100, hasher, equal_to_);
+
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> dist6(0, 1000); // distribution in range [1, 6]
+
+        for (size_t i = 0; i < 10000; ++i) {
+            unorderedMap1.insert({Key(dist6(rng), dist6(rng)), Value(dist6(rng))});
+        }
+
+    }
 }
 
 void unordered_map_tests() {
@@ -186,4 +205,5 @@ void unordered_map_tests() {
     RUN_TEST(tr, copy_ctr_test);
     RUN_TEST(tr, move_ctr_test);
     RUN_TEST(tr, operator_copy_ctr_test);
+    RUN_TEST(tr, speed_test);
 }

@@ -1,5 +1,5 @@
 #include <iostream>
+#include "unordered_map_tests.h"
 int main() {
-    std::cout << "fsgf";
     return 0;
 }

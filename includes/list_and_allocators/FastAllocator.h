@@ -32,7 +32,7 @@ public:
     };
 
     template<typename U>
-    using rebind_alloc = allocator<U>;
+    using rebind_alloc = std::allocator<U>;
 
 public:
     T* allocate(size_t n) {
