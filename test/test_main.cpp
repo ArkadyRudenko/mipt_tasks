@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "shared_ptr_test/shared_ptr_test.h"
+#include "shared_ptr_test.h"
+#include "variant_test.h"
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

@@ -21,12 +21,14 @@ include_directories(includes/tests/list_and_allocators)
 include_directories(includes/tests/deque_test)
 include_directories(includes/tests/string_test)
 include_directories(includes/tests/unordered_map_test)
-include_directories(includes/tests/shared_ptr_tests)
 include_directories(includes/string)
 include_directories(includes/deque)
 include_directories(includes/list_and_allocators)
 include_directories(includes/unordered_map)
 include_directories(includes/shared_ptr)
+include_directories(includes/variant)
+include_directories(test/shared_ptr_test)
+include_directories(test/variant_test)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 # ------------ BOOST ------------------
@@ -43,17 +45,6 @@ endif ()
 # ----------------------------------
 
 # ------------------TEST-------------------------------
-#include_directories(/usr/lib/x86_64-linux-gnu/cmake/GTest/GTestTargets.cmake)
-#
-#add_executable(
-#        GoogleTestDemo
-#        ${SOURCES}
-#)
-#
-#target_link_libraries(
-#        GoogleTestDemo gtest gtest_main
-#)
-
 add_executable(
         all_tests
         test/test_main.cpp
@@ -71,6 +62,7 @@ target_link_libraries(
 # ---------------------------------------------------
 
 add_executable(${PROJECT_NAME} main.cpp ${SOURCES})
+
 set_target_properties(
         ${PROJECT_NAME} PROPERTIES
         CXX_STANDARD 20
