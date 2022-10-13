@@ -7,6 +7,7 @@
 TEST(Variant, simpleTest1) {
     my::variant<int, double, std::string> v = 5;
     ASSERT_EQ(5, my::get<int>(v));
+//    v = 6;
 }
 
 TEST(Variant, simpleTest) {

@@ -1,12 +1,11 @@
 #include <iostream>
 
 namespace my {
-// ------------------------
+// ------------------------ get_index_by_type
     template<typename T, typename... Types>
     struct get_index_by_type {
         static const size_t value = 0;
     };
-
 
     template<typename T, typename Head, typename... Tail>
     struct get_index_by_type<T, Head, Tail...> {
@@ -17,8 +16,7 @@ namespace my {
     template<typename... Types>
     constexpr size_t get_index_by_type_v = get_index_by_type<Types...>::value;
 
-
-// --------------------
+// -------------------- type_by_index
     template<size_t Index, typename Head, typename... Types>
     struct type_by_index {
         using type = typename type_by_index<Index - 1, Types...>::type;
@@ -42,9 +40,7 @@ namespace my {
         using Derived = variant<Types...>;
         static const size_t index = get_index_by_type_v<T, Types...>;
 
-        VariantAlternative() {
-
-        }
+        VariantAlternative() {}
 
         VariantAlternative(const T& value) {
             static_cast<Derived*>(this)->storage.template put<index>(value);
@@ -115,18 +111,17 @@ namespace my {
         // constructors!
         using VariantAlternative<Types, Types...>::VariantAlternative...;
 
-
-        ~variant() {
-        (VariantAlternative<Types, Types...>::destroy(), ...);
+        template<typename T>
+        variant& operator=(const T& value) {
+            storage.template put<get_index_by_type_v<T, Types...>>(value);
         }
 
         size_t index() const {
             return current;
         }
 
-        template<typename T>
-        bool holds_alternative() const {
-            return get_index_by_type_v<T, Types...> == current;
+        ~variant() {
+            (VariantAlternative<Types, Types...>::destroy(), ...);
         }
     };
 
